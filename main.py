@@ -1,14 +1,7 @@
 from sys import argv
 from socket import socket
 import sqlite3 as sqlite
-
-ARG_NUMBER = 0
-
-if len(argv) < ARG_NUMBER:
-    print("Uso: EV_Central [PUERTO] [IP Broker] [PUERTO Broker]")
-    exit(-1)
-
-PORT = int(argv[1])
+from gui import run
 
 def create_database(filename: str):
     try:
@@ -31,6 +24,13 @@ def create_server_socket(port: int) -> socket :
     return s
 
 
+
+if len(argv) < 4:
+    print("Uso: EV_Central [PUERTO] [IP Broker] [PUERTO Broker]")
+    exit(-1)
+
+run()
+PORT = int(argv[1])
 create_database("database.db")
 server = create_server_socket(PORT)
 while True:
