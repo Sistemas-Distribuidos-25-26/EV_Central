@@ -1,6 +1,6 @@
 from sys import argv
 from socket import socket
-from app.database import Database
+from database import Database
 from gui import run
 import threading
 

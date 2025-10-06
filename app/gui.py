@@ -73,4 +73,4 @@ def search_ev_points(query):
     return dash.no_update
 
 def run():
-    app.run()
+    app.run("0.0.0.0", port=5001)
