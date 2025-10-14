@@ -1,6 +1,6 @@
 from sys import argv
 from socket import socket
-from database import Database
+from database import db
 from gui import run
 import threading
 
@@ -12,6 +12,9 @@ def handle_monitor(connection):
             break
         print(f"[ServerSocket] Recibido: {message}")
         id, state = message.split(',')
+        if not db.exists(id):
+            print(f"[ServerSocket] Alta de nuevo Charging Point {id}")
+            db.add_cp(id, 0, 0, "Nombre", 0, state)
 
 def run_server_socket() -> None :
     s = socket()
@@ -34,7 +37,6 @@ BROKER_PORT = int(argv[3])
 socket_thread = threading.Thread(target=run_server_socket, daemon=True)
 socket_thread.start()
 
-db = Database("database.db")
 try:
     db.add_cp("ALC01", 0, 0, "Universidad", 0.34, "ACTIVE")
 except:

@@ -17,7 +17,7 @@ class Database:
     def __init__(self, file: str):
         self.file = file
         try:
-            with sqlite3.connect(self.file) as c:
+            with sqlite3.connect(self.file, check_same_thread=False) as c:
                 self.c = c
                 cursor = c.cursor()
                 cursor.execute("""CREATE TABLE IF NOT EXISTS drivers (id INT PRIMARY KEY);""")
@@ -42,5 +42,13 @@ class Database:
         rows = self.cursor.fetchall()
         return rows
     
-    def set_state(id: str, state: str) -> None:
+    def set_state(self, id: str, state: str) -> None:
         if self.cursor is None: return
+
+    def exists(self, id: str) -> bool:
+        if self.cursor is None: return False
+        self.cursor.execute(f"SELECT * FROM charging_points WHERE id='{id}'")
+        rows = self.cursor.fetchall()
+        return False if not rows else True
+
+db = Database("database.db")

@@ -2,6 +2,7 @@ import dash
 from dash import html, Input, Output
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
+from database import db
 
 header = dbc.Navbar(
     dbc.Container([
@@ -19,20 +20,29 @@ def cp_widget(id: str, state: str) -> html.Div:
         html.P(f"Estado: {state}")
     ], className="cp")
 
+cps = db.get_cps()
+
+points = []
+for cp in cps:
+    points.append(
+        {
+            "id": cp[0],
+            "location": [cp[1], cp[2]],
+            "name": cp[3]
+        }
+    )
+
+
+widgets = []
+for cp in cps:
+    widgets.append(cp_widget(cp[0], cp[5]))
+
 sidebar = html.Aside([
     html.H5("Menú", className="display-6"),
     html.Hr(),
     html.P("Aquí se añadirán elementos futuros", className="lead"),
-    cp_widget("CP001", "ACTIVE"),
-    cp_widget("CP002", "UNKNOWN"),
-    cp_widget("CP003", "BROKEN")
+    *widgets
 ])
-
-points = [
-    {"id": "CP001", "location": [40.4168, -3.7038], "name": "Estación Centro"},
-    {"id": "CP002", "location": [40.4239, -3.6911], "name": "Estación Norte"},
-    {"id": "CP003", "location": [40.4098, -3.7104], "name": "Estación Sur"},
-]
 
 markers = [dl.Marker(position=pt["location"], children=dl.Tooltip(pt["name"])) for pt in points]
 
