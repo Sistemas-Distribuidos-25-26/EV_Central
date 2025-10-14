@@ -1,24 +1,7 @@
 import dash
-from dash import html, dcc, Input, Output
+from dash import html, Input, Output
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
-
-SIDEBAR_STYLE = {
-    "position": "fixed",
-    "top": "56px",
-    "left": 0,
-    "bottom": 0,
-    "width": "250px",
-    "padding": "1rem",
-    "background-color": "#f8f9fa",
-    "overflowY": "auto",
-}
-
-CONTENT_STYLE = {
-    "margin-left": "260px",
-    "margin-top": "56px",
-    "padding": "1rem",
-}
 
 header = dbc.Navbar(
     dbc.Container([
@@ -27,15 +10,23 @@ header = dbc.Navbar(
     ]),
     color="primary",
     dark=True,
-    fixed="top",
-    style={"height": "56px"},
+    fixed="top"
 )
 
-sidebar = html.Div([
+def cp_widget(id: str, state: str) -> html.Div:
+    return html.Div([
+        html.H3(id),
+        html.P(f"Estado: {state}")
+    ], className="cp")
+
+sidebar = html.Aside([
     html.H5("Menú", className="display-6"),
     html.Hr(),
     html.P("Aquí se añadirán elementos futuros", className="lead"),
-], style=SIDEBAR_STYLE)
+    cp_widget("CP001", "ACTIVE"),
+    cp_widget("CP002", "UNKNOWN"),
+    cp_widget("CP003", "BROKEN")
+])
 
 points = [
     {"id": "CP001", "location": [40.4168, -3.7038], "name": "Estación Centro"},
@@ -53,9 +44,9 @@ mapa = dl.Map(center=[40.4168, -3.7038], zoom=13, children=[
 content = html.Div([
     html.H3("Mapa de Puntos de Recarga"),
     mapa,
-], style=CONTENT_STYLE)
+], id="content")
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], assets_folder="assets")
 
 app.layout = html.Div([
     header,

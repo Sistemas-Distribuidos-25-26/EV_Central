@@ -1,0 +1,24 @@
+aside {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    bottom: 0;
+    width: 250px;
+    padding: 1rem;
+    background-color: "#f8f9fa";
+    overflowY: auto;
+}
+
+navbar {
+    height: 56px;
+}
+
+#content {
+    margin-left: 260px;
+    margin-top: 56px;
+    padding: 1rem;
+}
+
+.cp {
+    border: 1px solid black;
+}
