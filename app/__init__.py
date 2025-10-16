@@ -4,17 +4,50 @@ from database import db
 from gui import run
 import threading
 
+STX = b'\x02'
+ETX = b'\x03'
+EOT = b'\x04'
+ENQ = b'\x05'
+ACK = b'\x06'
+NACK = b'\x15'
+
+def calculate_lrc(data):
+    lrc = 0
+    for byte in data:
+        lrc ^= byte
+    return bytes([lrc])
+
+
 def handle_monitor(connection):
-    while True:
-        message = connection.recv(1024).decode()
-        if not message:
-            print("[ServerSocket] El cliente ha cortado la conexión")
-            break
-        print(f"[ServerSocket] Recibido: {message}")
-        id, state = message.split(',')
-        if not db.exists(id):
-            print(f"[ServerSocket] Alta de nuevo Charging Point {id}")
-            db.add_cp(id, 0, 0, "Nombre", 0, state)
+    try:
+        while True:
+            enquiry = connection.recv(1)
+            connection.send(ACK if enquiry == ENQ else NACK)
+            while True:
+                message = connection.recv(1024)
+                if not message or message == EOT:
+                    print("[ServerSocket] El cliente ha cortado la conexión")
+                    return
+                if message[0:1] != STX or ETX not in message:
+                    connection.send(NACK)
+                    break
+
+                end = message.index(ETX)
+                data = message[1:end]
+                lrc = message[end+1:end+2]
+                if lrc != calculate_lrc(data):
+                    connection.send(NACK)
+                else:
+                    connection.send(ACK)
+                    print(f"[ServerSocket] Recibido: {data.decode()}")
+                    id, state = data.decode().split(',')
+                    if not db.exists(id):
+                        print(f"[ServerSocket] Alta de nuevo Charging Point {id}")
+                        db.add_cp(id, 0, 0, "Nombre", 0, state)
+    except ConnectionError:
+        print("[ServerSocket] El cliente ha cortado la conexión")
+        connection.close()
+
 
 def run_server_socket() -> None :
     s = socket()
