@@ -1,3 +1,4 @@
+flask
 dash
 dash_leaflet
 dash_bootstrap_components

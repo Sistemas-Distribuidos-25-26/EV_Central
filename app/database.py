@@ -42,9 +42,12 @@ class Database:
 
     def add_cp(self, id: str, x: float, y: float, name: str, price: float, state: str) -> None:
         if self.cursor is None: return
-        self.cursor.execute(f"INSERT INTO charging_points (id,x,y,name,price,state) VALUES ('{id}',{x},{y},'{name}',{price},'{state}');") 
-        self.c.commit()
-        print(f"[DB] Añadido un nuevo CP ({id}, {x}, {y}, {name}, {price}, {state})")
+        try:
+            self.cursor.execute(f"INSERT INTO charging_points (id,x,y,name,price,state) VALUES ('{id}',{x},{y},'{name}',{price},'{state}');")
+            self.c.commit()
+            print(f"[DB] Añadido un nuevo CP ({id}, {x}, {y}, {name}, {price}, {state})")
+        except:
+            return
 
     def get_cps(self) -> list:
         if self.cursor is None: return
@@ -54,6 +57,7 @@ class Database:
     
     def set_state(self, id: str, state: str) -> None:
         if self.cursor is None: return
+        self.cursor.execute(f"UPDATE charging_points SET state='{state}' WHERE id='{id}'")
 
     def exists(self, id: str) -> bool:
         if self.cursor is None: return False
@@ -63,8 +67,17 @@ class Database:
 
     def add_request(self, start_datetime: str, driver_id: str, cp: str):
         if self.cursor is None: return
-        self.cursor.execute(f"INSERT INTO requests (start_date, driver_id, cp) VALUES ('{start_datetime}','{driver_id}', '{cp}');")
-        self.c.commit()
-        print(f"[DB] Añadida nueva request ({start_datetime},{driver_id},{cp})")
+        try:
+            self.cursor.execute(f"INSERT INTO requests (start_date, driver_id, cp) VALUES ('{start_datetime}','{driver_id}', '{cp}');")
+            self.c.commit()
+            print(f"[DB] Añadida nueva request ({start_datetime},{driver_id},{cp})")
+        except:
+            return
+
+    def get_requests(self) -> list:
+        if self.cursor is None: return
+        self.cursor.execute("SELECT * FROM requests")
+        rows = self.cursor.fetchall()
+        return rows
 
 db = Database("database.db")

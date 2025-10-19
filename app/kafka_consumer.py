@@ -1,7 +1,5 @@
 import time
 
-from more_itertools.more import consumer
-
 import config
 from kafka import KafkaConsumer
 from json import loads
@@ -35,4 +33,5 @@ def receive_requests():
             driver_id = data.get("driver")
             cp = data.get("cp")
             db.add_request(timestamp, driver_id, cp)
+            print(db.get_requests())
         time.sleep(1)
