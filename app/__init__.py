@@ -1,6 +1,7 @@
 from sys import argv
 import config
 from kafka_consumer import receive_requests
+from kafka_producer import resolve_requests
 from database import db
 from gui import run
 import threading
@@ -19,5 +20,8 @@ socket_thread.start()
 
 requests_thread = threading.Thread(target=receive_requests, daemon=True)
 requests_thread.start()
+
+orders_thread = threading.Thread(target=resolve_requests, daemon=True)
+orders_thread.start()
 
 run()

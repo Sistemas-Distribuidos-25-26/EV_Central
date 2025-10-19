@@ -1,4 +1,7 @@
 import sqlite3
+from threading import Lock
+
+db_lock = Lock()
 
 CREATE_TABLE_CP = """
     CREATE TABLE IF NOT EXISTS charging_points (
@@ -41,43 +44,67 @@ class Database:
             print(e)
 
     def add_cp(self, id: str, x: float, y: float, name: str, price: float, state: str) -> None:
-        if self.cursor is None: return
-        try:
-            self.cursor.execute(f"INSERT INTO charging_points (id,x,y,name,price,state) VALUES ('{id}',{x},{y},'{name}',{price},'{state}');")
-            self.c.commit()
-            print(f"[DB] Añadido un nuevo CP ({id}, {x}, {y}, {name}, {price}, {state})")
-        except:
-            return
+        with db_lock:
+            if self.cursor is None: return
+            try:
+                self.cursor.execute(f"INSERT INTO charging_points (id,x,y,name,price,state) VALUES ('{id}',{x},{y},'{name}',{price},'{state}');")
+                self.c.commit()
+                print(f"[DB] Añadido un nuevo CP ({id}, {x}, {y}, {name}, {price}, {state})")
+            except:
+                return
 
     def get_cps(self) -> list:
-        if self.cursor is None: return
-        self.cursor.execute("SELECT * FROM charging_points")
-        rows = self.cursor.fetchall()
-        return rows
+        with db_lock:
+            if self.cursor is None: return []
+            self.cursor.execute("SELECT * FROM charging_points")
+            rows = self.cursor.fetchall()
+            return rows
+
+    def get_cp(self, cp_id: str):
+        with db_lock:
+            if self.cursor is None: return None
+            self.cursor.execute(f"SELECT * FROM charging_points WHERE id='{cp_id}'")
+            rows = self.cursor.fetchall()
+            return rows[0]
     
     def set_state(self, id: str, state: str) -> None:
-        if self.cursor is None: return
-        self.cursor.execute(f"UPDATE charging_points SET state='{state}' WHERE id='{id}'")
+        with db_lock:
+            if self.cursor is None: return
+            self.cursor.execute(f"UPDATE charging_points SET state='{state}' WHERE id='{id}'")
 
     def exists(self, id: str) -> bool:
-        if self.cursor is None: return False
-        self.cursor.execute(f"SELECT * FROM charging_points WHERE id='{id}'")
-        rows = self.cursor.fetchall()
-        return False if not rows else True
+        with db_lock:
+            if self.cursor is None: return False
+            self.cursor.execute(f"SELECT * FROM charging_points WHERE id='{id}'")
+            rows = self.cursor.fetchall()
+            return False if not rows else True
 
     def add_request(self, start_datetime: str, driver_id: str, cp: str):
-        if self.cursor is None: return
-        try:
-            self.cursor.execute(f"INSERT INTO requests (start_date, driver_id, cp) VALUES ('{start_datetime}','{driver_id}', '{cp}');")
-            self.c.commit()
-            print(f"[DB] Añadida nueva request ({start_datetime},{driver_id},{cp})")
-        except:
-            return
+        with db_lock:
+            if self.cursor is None: return
+            try:
+                self.cursor.execute(f"INSERT INTO requests (start_date, driver_id, cp) VALUES ('{start_datetime}','{driver_id}', '{cp}');")
+                self.c.commit()
+                print(f"[DB] Añadida nueva request ({start_datetime},{driver_id},{cp})")
+            except:
+                return
 
     def get_requests(self) -> list:
-        if self.cursor is None: return
-        self.cursor.execute("SELECT * FROM requests")
-        rows = self.cursor.fetchall()
-        return rows
+        with db_lock:
+            if self.cursor is None: return
+            self.cursor.execute("SELECT * FROM requests")
+            rows = self.cursor.fetchall()
+            return rows
+
+    def delete_request(self, timestamp, driver, cp):
+        with db_lock:
+            if self.cursor is None: return
+            try:
+                self.cursor.execute(f"DELETE FROM requests WHERE start_date='{timestamp}' AND driver_id='{driver}' AND cp='{cp}';")
+                self.c.commit()
+                print(f"[DB] Eliminada la request ({timestamp},{driver},{cp})")
+            except Exception as e:
+                print(e)
+                return
 
 db = Database("database.db")
