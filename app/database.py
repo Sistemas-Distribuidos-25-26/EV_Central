@@ -11,6 +11,15 @@ CREATE_TABLE_CP = """
     );
 """
 
+CREATE_TABLE_REQUESTS = """
+    CREATE TABLE IF NOT EXISTS requests (
+        start_date DATETIME NOT NULL,
+        driver_id  VARCHAR(5) NOT NULL,
+        cp      VARCHAR(5) NOT NULL,
+        PRIMARY KEY (start_date, driver_id, cp)
+    );
+"""
+
 
 class Database:
 
@@ -22,6 +31,7 @@ class Database:
                 cursor = c.cursor()
                 cursor.execute("""CREATE TABLE IF NOT EXISTS drivers (id INT PRIMARY KEY);""")
                 cursor.execute(CREATE_TABLE_CP)
+                cursor.execute(CREATE_TABLE_REQUESTS)
                 c.commit()
                 print("[DB] Base de datos creada o restaurada")
                 self.cursor = cursor
@@ -50,5 +60,11 @@ class Database:
         self.cursor.execute(f"SELECT * FROM charging_points WHERE id='{id}'")
         rows = self.cursor.fetchall()
         return False if not rows else True
+
+    def add_request(self, start_datetime: str, driver_id: str, cp: str):
+        if self.cursor is None: return
+        self.cursor.execute(f"INSERT INTO requests (start_date, driver_id, cp) VALUES ('{start_datetime}','{driver_id}', '{cp}');")
+        self.c.commit()
+        print(f"[DB] Añadida nueva request ({start_datetime},{driver_id},{cp})")
 
 db = Database("database.db")
