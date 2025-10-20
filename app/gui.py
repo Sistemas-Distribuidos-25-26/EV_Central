@@ -21,20 +21,31 @@ header = dbc.Navbar(
 )
 
 COLOR_MAP = {
-    "UNKNOWN": "#b0a7b8",
-    "ACTIVE": "#9de64e",
-    "OUT_OF_ORDER": "#de5d3a",
-    "CHARGING":"#3388de",
-    "BROKEN": "#ec273f",
-    "DISCONNECTED": "#b0a7b8"
+    "DESCONECTADO": "#b0a7b8",
+    "ACTIVO": "#9de64e",
+    "FUERA DE SERVICIO": "#de5d3a",
+    "SUMINISTRANDO":"#3388de",
+    "K.O.": "#ec273f"
 }
 
-def cp_widget(id: str, state: str, price: str) -> html.Div:
-    return html.Div([
-        html.H3(id),
-        html.P(f"Estado: {state}"),
-        html.P(f"{price}€/kWh")
-    ], className="cp", style={"background-color": COLOR_MAP.get(state, "white")})
+def cp_widget(id: str, state: str, price: str, paired: str | None, total_charged: str | None) -> html.Div:
+
+    if paired and total_charged:
+        return html.Div([
+            html.H3(id),
+            html.P(f"Estado: {state}"),
+            html.P(f"{price}€/kWh"),
+            html.Div([
+                html.P(f"{paired}"),
+                html.P(f"{total_charged}kWh")
+            ])
+        ], className="cp", style={"background-color": COLOR_MAP.get(state, "white")})
+    else:
+        return html.Div([
+            html.H3(id),
+            html.P(f"Estado: {state}"),
+            html.P(f"{price}€/kWh")
+        ], className="cp", style={"background-color": COLOR_MAP.get(state, "white")})
 
 def req_widget(timestamp: str, driver: str, cp: str) -> html.Tr:
     return html.Tr([
@@ -58,11 +69,11 @@ def reload_cps(query: str):
     cps = db.get_cps()
     if query == "" or query is None:
         for cp in cps:
-            widgets.append(cp_widget(cp[0], cp[5], cp[4]))
+            widgets.append(cp_widget(cp[0], cp[5], cp[4], cp[6], cp[7] if cp[7] else "0"))
     else:
         for cp in cps:
             if str(cp[0]).find(query.upper()) != -1:
-                widgets.append(cp_widget(cp[0], cp[5], cp[4]))
+                widgets.append(cp_widget(cp[0], cp[5], cp[4], cp[6], cp[7] if cp[7] else "0"))
     if not widgets:
         widgets = [html.P("No hay resultados")]
     return widgets

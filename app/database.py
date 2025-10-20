@@ -10,7 +10,9 @@ CREATE_TABLE_CP = """
         y REAL NOT NULL,
         name VARCHAR(32) NOT NULL,
         price REAL,
-        state VARCHAR(12) NOT NULL
+        state VARCHAR(12) NOT NULL,
+        paired VARCHAR(8),
+        total_charged REAL
     );
 """
 
@@ -32,7 +34,6 @@ class Database:
             with sqlite3.connect(self.file, check_same_thread=False) as c:
                 self.c = c
                 cursor = c.cursor()
-                cursor.execute("""CREATE TABLE IF NOT EXISTS drivers (id INT PRIMARY KEY);""")
                 cursor.execute(CREATE_TABLE_CP)
                 cursor.execute(CREATE_TABLE_REQUESTS)
                 c.commit()
@@ -67,10 +68,20 @@ class Database:
             rows = self.cursor.fetchall()
             return rows[0]
     
-    def set_state(self, id: str, state: str) -> None:
+    def set_state(self, id: str, state: str, paired: str | None, total_charged: str | None) -> None:
         with db_lock:
             if self.cursor is None: return
-            self.cursor.execute(f"UPDATE charging_points SET state='{state}' WHERE id='{id}'")
+            if not paired and not total_charged:
+                self.cursor.execute(f"UPDATE charging_points SET state='{state}' WHERE id='{id}'")
+            elif not total_charged:
+                self.cursor.execute(f"UPDATE charging_points SET state='{state}', paired='{paired}' WHERE id='{id}'")
+            else:
+                self.cursor.execute(f"UPDATE charging_points SET state='{state}', paired='{paired}', total_charged={total_charged} WHERE id='{id}'")
+
+    def disconnect_all(self):
+        with db_lock:
+            if self.cursor is None: return
+            self.cursor.execute(f"UPDATE charging_points SET state='DESCONECTADO'")
 
     def exists(self, id: str) -> bool:
         with db_lock:
@@ -108,3 +119,4 @@ class Database:
                 return
 
 db = Database("database.db")
+db.disconnect_all()

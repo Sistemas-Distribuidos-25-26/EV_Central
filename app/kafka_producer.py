@@ -42,24 +42,24 @@ def resolve_requests():
                 continue
             cp = db.get_cp(target)
             state = cp[5]
-            if state == "CHARGING":
+            if state == "SUMINISTRANDO":
                 send_notification("in-use",target,req[1])
                 db.delete_request(req[0], req[1], req[2])
                 continue
-            if state == "OUT_OF_ORDER":
+            if state == "FUERA DE SERVICIO":
                 send_notification("out-of-order", target,req[1])
                 db.delete_request(req[0], req[1], req[2])
                 continue
-            if state == "BROKEN":
+            if state == "K.O.":
                 send_notification("broken", target, req[1])
                 db.delete_request(req[0], req[1], req[2])
                 continue
-            if state == "UNKNOWN":
+            if state == "DESCONECTADO":
                 send_notification("unavailable", target, req[1])
                 db.delete_request(req[0], req[1], req[2])
                 continue
             producer.send("orders", {
-                "type": "start",
+                "type": "prepare",
                 "from": target,
                 "to": req[1]
             })

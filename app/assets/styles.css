@@ -45,6 +45,15 @@ aside h5, aside p {
     font-weight: bold;
 }
 
+.cp div {
+    width: 100%;
+}
+
+.cp div * {
+    width: 100%;
+    text-align: right;
+}
+
 #control-panel {
     position: fixed;
     top: 56px;

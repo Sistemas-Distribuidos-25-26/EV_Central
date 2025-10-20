@@ -16,7 +16,6 @@ def calculate_lrc(data):
         lrc ^= byte
     return bytes([lrc])
 
-
 def handle_monitor(connection):
     try:
         while True:
@@ -39,14 +38,18 @@ def handle_monitor(connection):
                 else:
                     connection.send(ACK)
                     print(f"[ServerSocket] Recibido: {data.decode()}")
-                    type,id, state = data.decode().split('#')
-                    if not db.exists(id) and type == 'A':
+                    info = data.decode().split('#')
+                    msgtype = info[0]
+                    id = info[1]
+                    state = info[2]
+                    if not db.exists(id) and msgtype == 'A':
                         print(f"[ServerSocket] Alta de nuevo Charging Point {id}")
-                        db.add_cp(id, 0, 0, "Nombre", 0, state)
-                    if type == 'S':
-                        db.set_state(id, state)
-                        #actualizar estado
-                        pass
+                        price = info[3]
+                        db.add_cp(id, 0, 0, "Nombre", price, state)
+                    if msgtype == 'S':
+                        paired = info[3]
+                        total_charged = info[4]
+                        db.set_state(id, state, paired, total_charged)
 
     except ConnectionError:
         print("[ServerSocket] El cliente ha cortado la conexión")
