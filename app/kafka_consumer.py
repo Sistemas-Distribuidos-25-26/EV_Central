@@ -8,24 +8,29 @@ from database import db
 
 consumer = None
 
-try:
-    print(f"[KafkaConsumer] Intentando conectar con Kafka ({config.BROKER_IP}:{config.BROKER_PORT})...")
-    consumer = KafkaConsumer(
-        "requests", "orders", "transactions",
-        bootstrap_servers=[f"{config.BROKER_IP}:{config.BROKER_PORT}"],
-        auto_offset_reset='earliest',
-        enable_auto_commit=True,
-        value_deserializer=lambda m: loads(m.decode('utf-8'))
-    )
-    print("[KafkaConsumer] Conectado a Kafka")
-except:
-    print("[KafkaConsumer] Error al conectar con Kafka")
+def setup_consumer():
+    global consumer
+    try:
+        print(f"[KafkaConsumer] Intentando conectar con Kafka ({config.BROKER_IP}:{config.BROKER_PORT})...")
+        consumer = KafkaConsumer(
+            "requests", "orders", "transactions",
+            bootstrap_servers=[f"{config.BROKER_IP}:{config.BROKER_PORT}"],
+            auto_offset_reset='earliest',
+            enable_auto_commit=True,
+            value_deserializer=lambda m: loads(m.decode('utf-8'))
+        )
+        print("[KafkaConsumer] Conectado a Kafka")
+    except:
+        print("[KafkaConsumer] Error al conectar con Kafka")
 
 def receive_requests():
+    global consumer
+    setup_consumer()
     while True:
         if not consumer:
             print("[KafkaConsumer] Error al conectar con Kafka")
             time.sleep(5)
+            setup_consumer()
             continue
         for message in consumer:
             print("[KafkaConsumer] Nueva request")

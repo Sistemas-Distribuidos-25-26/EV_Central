@@ -2,15 +2,19 @@ import time
 from kafka import KafkaProducer
 from database import db
 import json
+import config
 
 producer = None
-try:
-    producer = KafkaProducer(
-        bootstrap_servers=['localhost:9092'],
-        value_serializer=lambda v: json.dumps(v).encode('utf-8')
-    )
-except:
-    producer = None
+
+def setup_producer():
+    global producer
+    try:
+        producer = KafkaProducer(
+            bootstrap_servers=[f"{config.BROKER_IP}:{config.BROKER_PORT}"],
+            value_serializer=lambda v: json.dumps(v).encode('utf-8')
+        )
+    except:
+        producer = None
 
 
 def create_ticket(price: float, total_charged: float, paired: str):
@@ -37,10 +41,11 @@ def send_notification(notiftype, target, dest):
 
 def resolve_requests():
     global producer
-
+    setup_producer()
     while True:
         if not producer:
             time.sleep(5)
+            setup_producer()
             continue
 
         requests = db.get_requests()

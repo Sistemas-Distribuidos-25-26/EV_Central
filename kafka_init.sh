@@ -1,4 +1,4 @@
-docker run -d --name ev_kafka \
+docker run --network ev_network -d --name ev_kafka \
   -p 9092:9092 -p 9093:9093 \
   -e KAFKA_PROCESS_ROLES=broker,controller \
   -e KAFKA_NODE_ID=1 \
