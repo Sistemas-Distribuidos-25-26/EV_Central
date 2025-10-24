@@ -25,7 +25,8 @@ COLOR_MAP = {
     "ACTIVO": "#9de64e",
     "FUERA DE SERVICIO": "#de5d3a",
     "SUMINISTRANDO":"#3388de",
-    "K.O.": "#ec273f"
+    "K.O.": "#ec273f",
+    "AVERIADO": "#ec273f"
 }
 
 def cp_widget(id: str, state: str, price: str, paired: str | None, total_charged: str | None) -> html.Div:
@@ -138,4 +139,4 @@ def refresh(n, value):
 
 
 def run():
-    app.run(host="0.0.0.0", port=10001)
+    app.run(host="0.0.0.0", port=10000)

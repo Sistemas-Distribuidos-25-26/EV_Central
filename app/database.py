@@ -68,15 +68,20 @@ class Database:
             rows = self.cursor.fetchall()
             return rows[0]
     
-    def set_state(self, id: str, state: str, paired: str | None, total_charged: str | None) -> None:
+    def set_state(self, id: str, state: str) -> None:
         with db_lock:
             if self.cursor is None: return
-            if not paired and not total_charged:
-                self.cursor.execute(f"UPDATE charging_points SET state='{state}' WHERE id='{id}'")
-            elif not total_charged:
-                self.cursor.execute(f"UPDATE charging_points SET state='{state}', paired='{paired}' WHERE id='{id}'")
-            else:
-                self.cursor.execute(f"UPDATE charging_points SET state='{state}', paired='{paired}', total_charged={total_charged} WHERE id='{id}'")
+            self.cursor.execute(f"UPDATE charging_points SET state='{state}' WHERE id='{id}'")
+
+    def set_transaction(self, id: str, paired: str, total_charged: float):
+        with db_lock:
+            if self.cursor is None: return
+            self.cursor.execute(f"UPDATE charging_points SET paired='{paired}', total_charged={total_charged} WHERE id='{id}'")
+
+    def clear_transaction(self, id: str):
+        with db_lock:
+            if self.cursor is None: return
+            self.cursor.execute(f"UPDATE charging_points SET paired=NULL, total_charged=NULL WHERE id='{id}'")
 
     def disconnect_all(self):
         with db_lock:

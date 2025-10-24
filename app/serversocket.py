@@ -37,7 +37,6 @@ def handle_monitor(connection):
                     connection.send(NACK)
                 else:
                     connection.send(ACK)
-                    print(f"[ServerSocket] Recibido: {data.decode()}")
                     info = data.decode().split('#')
                     msgtype = info[0]
                     id = info[1]
@@ -47,9 +46,7 @@ def handle_monitor(connection):
                         price = info[3]
                         db.add_cp(id, 0, 0, "Nombre", price, state)
                     if msgtype == 'S':
-                        paired = info[3]
-                        total_charged = info[4]
-                        db.set_state(id, state, paired, total_charged)
+                        db.set_state(id, state)
 
     except ConnectionError:
         print("[ServerSocket] El cliente ha cortado la conexión")

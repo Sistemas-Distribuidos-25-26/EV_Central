@@ -12,6 +12,20 @@ try:
 except:
     producer = None
 
+
+def create_ticket(price: float, total_charged: float, paired: str):
+    total_price = price * total_charged
+    ticket = f"-----TICKET-----\nPrecio: {price}€/kWh\nConsumición: {total_charged}kWh\nTOTAL: {total_price:.2f}€\n-----------------"
+    if producer is None: return
+    producer.send("tickets", ticket)
+    producer.flush()
+    producer.send("notifications", {
+        "type": "completed",
+        "target": "",
+        "destination": paired
+    })
+    producer.flush()
+
 def send_notification(notiftype, target, dest):
     global producer
     producer.send("notifications", {
