@@ -1,29 +1,28 @@
 from sys import argv
-from socket import socket
-from database import Database
-from gui import run
-import threading
-
-def run_server_socket() -> None :
-    s = socket()
-    s.bind(('', PORT))
-    s.listen(5)
-    print("Escuchando en el puerto " + str(PORT))
-    while True:
-        connection, addr = s.accept()
-
-        connection.close()
-        break
+import config
 
 if len(argv) < 4:
     print("Uso: EV_Central [PUERTO] [IP Broker] [PUERTO Broker]")
     exit(-1)
 
-PORT = int(argv[1])
+config.PORT = int(argv[1])
+config.BROKER_IP = argv[2]
+config.BROKER_PORT = int(argv[3])
 
-socket_thread = threading.Thread(target=run_server_socket)
-socket_thread.daemon = True
+from kafka_consumer import receive_requests, setup_consumer
+from kafka_producer import resolve_requests, setup_producer
+from database import db
+from gui import run
+import threading
+from serversocket import run_server_socket
+
+socket_thread = threading.Thread(target=run_server_socket, daemon=True)
 socket_thread.start()
 
-db = Database("database.db")
+requests_thread = threading.Thread(target=receive_requests, daemon=True)
+requests_thread.start()
+
+orders_thread = threading.Thread(target=resolve_requests, daemon=True)
+orders_thread.start()
+
 run()

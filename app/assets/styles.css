@@ -1,0 +1,86 @@
+#widget-panel {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    bottom: 0;
+    width: 250px;
+    padding: 1rem;
+    background-color: "#f8f9fa";
+    overflowY: auto;
+    padding: 0;
+}
+
+navbar {
+    height: 56px;
+}
+
+#map {
+    margin-left: 260px;
+    margin-top: 56px;
+    padding: 0;
+}
+
+aside h5, aside p {
+    margin: 1rem;
+}
+
+.cp {
+    color: white;
+    padding-bottom: 15px;
+}
+
+.cp h3 {
+    width: 100%;
+    padding: 5px 10px 5px 10px;
+    text-align: center;
+    background-color: #ffffff33;
+    margin-bottom: 5px;
+}
+
+.cp p {
+    margin: 0;
+    padding: 5px; 0 0 0;
+    width: 100%;
+    text-align: center;
+    font-weight: bold;
+}
+
+.cp div {
+    width: 100%;
+}
+
+.cp div * {
+    width: 100%;
+    text-align: right;
+}
+
+#control-panel {
+    position: fixed;
+    top: 56px;
+    right: 0;
+    bottom: 0;
+    width: 25vw;
+    padding: 1rem;
+    background-color: "#f8f9fa";
+    overflowY: auto;
+    padding: 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border-width: 1px;
+    table-layout: fixed;
+}
+
+#control-panel table td {
+    padding: 3px 5px;
+}
+
+thead, tbody {
+ width: 100%;
+}
+
+td {
+    border: 1px solid black;
+}

@@ -1,24 +1,14 @@
 import dash
-from dash import html, dcc, Input, Output
+from dash import html, Input, Output, State, dcc
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
+from database import db
+from flask import Flask
+import logging
 
-SIDEBAR_STYLE = {
-    "position": "fixed",
-    "top": "56px",
-    "left": 0,
-    "bottom": 0,
-    "width": "250px",
-    "padding": "1rem",
-    "background-color": "#f8f9fa",
-    "overflowY": "auto",
-}
-
-CONTENT_STYLE = {
-    "margin-left": "260px",
-    "margin-top": "56px",
-    "padding": "1rem",
-}
+server = Flask(__name__)
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 header = dbc.Navbar(
     dbc.Container([
@@ -27,50 +17,127 @@ header = dbc.Navbar(
     ]),
     color="primary",
     dark=True,
-    fixed="top",
-    style={"height": "56px"},
+    fixed="top"
 )
 
-sidebar = html.Div([
+COLOR_MAP = {
+    "DESCONECTADO": "#b0a7b8",
+    "ACTIVO": "#9de64e",
+    "FUERA DE SERVICIO": "#de5d3a",
+    "SUMINISTRANDO":"#3388de",
+    "K.O.": "#ec273f",
+    "AVERIADO": "#ec273f"
+}
+
+def cp_widget(id: str, state: str, price: str, paired: str | None, total_charged: str | None) -> html.Div:
+
+    if paired and total_charged:
+        return html.Div([
+            html.H3(id),
+            html.P(f"Estado: {state}"),
+            html.P(f"{price}€/kWh"),
+            html.Div([
+                html.P(f"{paired}"),
+                html.P(f"{total_charged}kWh")
+            ])
+        ], className="cp", style={"background-color": COLOR_MAP.get(state, "white")})
+    else:
+        return html.Div([
+            html.H3(id),
+            html.P(f"Estado: {state}"),
+            html.P(f"{price}€/kWh")
+        ], className="cp", style={"background-color": COLOR_MAP.get(state, "white")})
+
+def req_widget(timestamp: str, driver: str, cp: str) -> html.Tr:
+    return html.Tr([
+        html.Td(timestamp),
+        html.Td(driver),
+        html.Td(cp)
+    ])
+
+points = []
+for cp in db.get_cps():
+    points.append(
+        {
+            "id": cp[0],
+            "location": [cp[1], cp[2]],
+            "name": cp[3]
+        }
+    )
+
+def reload_cps(query: str):
+    widgets = []
+    cps = db.get_cps()
+    if query == "" or query is None:
+        for cp in cps:
+            widgets.append(cp_widget(cp[0], cp[5], cp[4], cp[6], cp[7] if cp[7] else "0"))
+    else:
+        for cp in cps:
+            if str(cp[0]).find(query.upper()) != -1:
+                widgets.append(cp_widget(cp[0], cp[5], cp[4], cp[6], cp[7] if cp[7] else "0"))
+    if not widgets:
+        widgets = [html.P("No hay resultados")]
+    return widgets
+
+def reload_requests():
+    request_widgets : list[html.Tr] = []
+    requests = db.get_requests()
+    for rq in requests:
+        request_widgets.append(req_widget(rq[0],rq[1],rq[2]))
+    return request_widgets
+
+# Primera carga de información con la info guardada en la DB
+reload_requests()
+reload_cps("")
+
+sidebar = html.Aside([
     html.H5("Menú", className="display-6"),
     html.Hr(),
-    html.P("Aquí se añadirán elementos futuros", className="lead"),
-], style=SIDEBAR_STYLE)
-
-points = [
-    {"id": "CP001", "location": [40.4168, -3.7038], "name": "Estación Centro"},
-    {"id": "CP002", "location": [40.4239, -3.6911], "name": "Estación Norte"},
-    {"id": "CP003", "location": [40.4098, -3.7104], "name": "Estación Sur"},
-]
+    html.Div([], id="widget-sidebar")
+], id="widget-panel")
 
 markers = [dl.Marker(position=pt["location"], children=dl.Tooltip(pt["name"])) for pt in points]
 
 mapa = dl.Map(center=[40.4168, -3.7038], zoom=13, children=[
     dl.TileLayer(),
     dl.LayerGroup(markers)
-], style={"width": "100%", "height": "600px"})
+], style={"width": "50%", "height": "800px"}, id="map")
 
-content = html.Div([
-    html.H3("Mapa de Puntos de Recarga"),
-    mapa,
-], style=CONTENT_STYLE)
+control_panel = html.Aside([
+    html.P("Peticiones en curso"),
+    html.Table([
+        html.Thead([
+            html.Tr([html.Th("Timestamp"), html.Th("DriverID"), html.Th("CP")])
+        ]),
+        html.Tbody(
+            [], id="requests-sidebar"
+        )]),
+    html.P("Mensajes internos"),
+    html.Pre("")
+], id="control-panel")
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], assets_folder="assets", server=server, update_title="Updating...")
 
 app.layout = html.Div([
     header,
     sidebar,
-    content,
+    mapa,
+    control_panel,
+    dcc.Interval(interval=1000, n_intervals=0, id="interval_component")
 ])
 
 @app.callback(
-    Output("search-input", "value"),
-    Input("search-input", "value"),
+    [Output("widget-sidebar", "children"),
+     Output("requests-sidebar", "children")],
+    Input("interval_component", "n_intervals"),
+    State("search-input", "value")
 )
-def search_ev_points(query):
-    if query:
-        print(f"Búsqueda: {query}")
-    return dash.no_update
+def refresh(n, value):
+    cps = reload_cps(value)
+    requests = reload_requests()
+    return cps, requests
+
 
 def run():
-    app.run("0.0.0.0", port=5001)
+    app.run(host="0.0.0.0", port=10000)
+
