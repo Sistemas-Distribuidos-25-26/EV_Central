@@ -1,10 +1,12 @@
 import dash
-from dash import html, Input, Output, State, dcc
+from dash import html, Input, Output, State, dcc, ALL
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 from database import db
 from flask import Flask
 import logging
+import config
+from kafka_producer import change_state
 
 server = Flask(__name__)
 log = logging.getLogger('werkzeug')
@@ -30,23 +32,15 @@ COLOR_MAP = {
 }
 
 def cp_widget(id: str, state: str, price: str, paired: str | None, total_charged: str | None) -> html.Div:
-
-    if paired and total_charged:
-        return html.Div([
-            html.H3(id),
-            html.P(f"Estado: {state}"),
-            html.P(f"{price}€/kWh"),
-            html.Div([
-                html.P(f"{paired}"),
-                html.P(f"{total_charged}kWh")
-            ])
-        ], className="cp", style={"background-color": COLOR_MAP.get(state, "white")})
-    else:
-        return html.Div([
-            html.H3(id),
-            html.P(f"Estado: {state}"),
-            html.P(f"{price}€/kWh")
-        ], className="cp", style={"background-color": COLOR_MAP.get(state, "white")})
+    return html.Div([
+        html.H3(id),
+        html.P(f"Estado: {state}"),
+        html.P(f"{price}€/kWh"),
+        html.Div([
+            html.P(f"{paired}"),
+            html.P(f"{total_charged}kWh")
+        ]) if paired and total_charged else None
+    ], className="cp", id={"type":"cp-widget", "index": id}, n_clicks=0 ,style={"background-color": COLOR_MAP.get(state, "white")})
 
 def req_widget(timestamp: str, driver: str, cp: str) -> html.Tr:
     return html.Tr([
@@ -93,18 +87,23 @@ reload_cps("")
 sidebar = html.Aside([
     html.H5("Menú", className="display-6"),
     html.Hr(),
+    html.Div([
+        html.Button("Desactivar todos", id="disable-all-button", n_clicks=0),
+        html.Button("Activar todos", id="enable-all-button", n_clicks=0)
+    ], id="general-controls"),
     html.Div([], id="widget-sidebar")
 ], id="widget-panel")
 
 markers = [dl.Marker(position=pt["location"], children=dl.Tooltip(pt["name"])) for pt in points]
 
-mapa = dl.Map(center=[40.4168, -3.7038], zoom=13, children=[
+mapa = dl.Map(center=[38.5, -0.4038], zoom=9, children=[
     dl.TileLayer(),
     dl.LayerGroup(markers)
-], style={"width": "50%", "height": "800px"}, id="map")
+], id="map")
 
 control_panel = html.Aside([
-    html.P("Peticiones en curso"),
+    html.H3("Peticiones en curso"),
+    html.Hr(),
     html.Table([
         html.Thead([
             html.Tr([html.Th("Timestamp"), html.Th("DriverID"), html.Th("CP")])
@@ -112,8 +111,9 @@ control_panel = html.Aside([
         html.Tbody(
             [], id="requests-sidebar"
         )]),
-    html.P("Mensajes internos"),
-    html.Pre("")
+    html.H3("Mensajes internos"),
+    html.Hr(),
+    html.Pre("", id="log_panel")
 ], id="control-panel")
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], assets_folder="assets", server=server, update_title="Updating...")
@@ -124,19 +124,56 @@ app.layout = html.Div([
     mapa,
     control_panel,
     dcc.Interval(interval=1000, n_intervals=0, id="interval_component")
-])
+], id="main_div")
 
 @app.callback(
     [Output("widget-sidebar", "children"),
-     Output("requests-sidebar", "children")],
+     Output("requests-sidebar", "children"),
+     Output("log_panel", "children")],
     Input("interval_component", "n_intervals"),
     State("search-input", "value")
 )
 def refresh(n, value):
     cps = reload_cps(value)
     requests = reload_requests()
-    return cps, requests
+    config.LOG_FILE.seek(0)
+    logs = config.LOG_FILE.read()
+    return cps, requests, logs
 
+@app.callback(
+    Output("main_div", "children"),
+    Input({'type': 'cp-widget', 'index': ALL}, 'n_clicks'),
+    State({'type': 'cp-widget', 'index': ALL}, 'id')
+)
+def on_cp_click(clicks, ids):
+    for i, c in enumerate(clicks):
+        if c:
+            cp_id = ids[i]['index']
+            cp_state = db.get_cp(cp_id)[5]
+            change_state(cp_id, cp_state == "ACTIVO")
+    return dash.no_update
+
+@app.callback(
+    Output("disable-all-button", "children"),
+    Input("disable-all-button", "n_clicks")
+)
+def disable_all(n):
+    config.log("[Central] Desactivando todos los CP...")
+    all_cps = db.get_cps()
+    for cp in all_cps:
+        change_state(cp[0], True)
+    return dash.no_update
+
+@app.callback(
+    Output("enable-all-button", "children"),
+    Input("enable-all-button", "n_clicks")
+)
+def enable_all(n):
+    config.log("[Central] Activando todos los CP...")
+    all_cps = db.get_cps()
+    for cp in all_cps:
+        change_state(cp[0], False)
+    return dash.no_update
 
 def run():
     app.run(host="0.0.0.0", port=10000)

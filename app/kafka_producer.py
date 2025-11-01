@@ -4,7 +4,7 @@ from database import db
 import json
 import config
 
-producer = None
+producer: KafkaProducer | None = None
 
 def setup_producer():
     global producer
@@ -27,6 +27,14 @@ def create_ticket(price: float, total_charged: float, paired: str):
         "type": "completed",
         "target": "",
         "destination": paired
+    })
+    producer.flush()
+
+def change_state(cp_id: str, enabled: bool):
+    producer.send("orders", {
+        "type": "disable" if enabled else "enable",
+        "from": cp_id,
+        "to": ""
     })
     producer.flush()
 
@@ -54,7 +62,7 @@ def resolve_requests():
             continue
         for req in requests:
             target = req[2]
-            print(f"[KafkaProducer] Resolviendo request ({target},{req[1]})")
+            config.log(f"[KafkaProducer] Resolviendo request ({target},{req[1]})")
             if not db.exists(target):
                 send_notification("unknown-cp",target,req[1])
                 db.delete_request(req[0],req[1],req[2])
@@ -62,18 +70,17 @@ def resolve_requests():
             cp = db.get_cp(target)
             state = cp[5]
             if state == "SUMINISTRANDO":
+                config.log(f"[Request] Error: el CP {target} ya está en uso")
                 send_notification("in-use",target,req[1])
                 db.delete_request(req[0], req[1], req[2])
                 continue
             if state == "FUERA DE SERVICIO":
+                config.log(f"[Request] Error: el CP {target} está fuera de servicio")
                 send_notification("out-of-order", target,req[1])
                 db.delete_request(req[0], req[1], req[2])
                 continue
-            if state == "K.O.":
-                send_notification("broken", target, req[1])
-                db.delete_request(req[0], req[1], req[2])
-                continue
-            if state == "DESCONECTADO":
+            if state == "DESCONECTADO" or state == "K.O." or state == "AVERIADO":
+                config.log(f"[Request] Error: el CP {target} no está disponible")
                 send_notification("unavailable", target, req[1])
                 db.delete_request(req[0], req[1], req[2])
                 continue
