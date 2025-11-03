@@ -1,5 +1,6 @@
 import sqlite3
 from threading import Lock
+import config
 
 db_lock = Lock()
 
@@ -37,7 +38,7 @@ class Database:
                 cursor.execute(CREATE_TABLE_CP)
                 cursor.execute(CREATE_TABLE_REQUESTS)
                 c.commit()
-                print("[DB] Base de datos creada o restaurada")
+                config.log("[DB] Base de datos creada o restaurada")
                 self.cursor = cursor
 
         except sqlite3.DatabaseError as e:
@@ -50,7 +51,7 @@ class Database:
             try:
                 self.cursor.execute(f"INSERT INTO charging_points (id,x,y,name,price,state) VALUES ('{id}',{x},{y},'{name}',{price},'{state}');")
                 self.c.commit()
-                print(f"[DB] Añadido un nuevo CP ({id}, {x}, {y}, {name}, {price}, {state})")
+                config.log(f"[DB] Añadido un nuevo CP ({id}, {x}, {y}, {name}, {price}, {state})")
             except:
                 return
 
@@ -101,7 +102,7 @@ class Database:
             try:
                 self.cursor.execute(f"INSERT INTO requests (start_date, driver_id, cp) VALUES ('{start_datetime}','{driver_id}', '{cp}');")
                 self.c.commit()
-                print(f"[DB] Añadida nueva request ({start_datetime},{driver_id},{cp})")
+                config.log(f"[DB] Añadida nueva request ({start_datetime},{driver_id},{cp})")
             except:
                 return
 
@@ -118,9 +119,9 @@ class Database:
             try:
                 self.cursor.execute(f"DELETE FROM requests WHERE start_date='{timestamp}' AND driver_id='{driver}' AND cp='{cp}';")
                 self.c.commit()
-                print(f"[DB] Eliminada la request ({timestamp},{driver},{cp})")
+                config.log(f"[DB] Eliminada la request ({timestamp},{driver},{cp})")
             except Exception as e:
-                print(e)
+                config.log(e)
                 return
 
 db = Database("database.db")

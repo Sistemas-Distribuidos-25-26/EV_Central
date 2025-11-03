@@ -3,11 +3,15 @@
     top: 56px;
     left: 0;
     bottom: 0;
-    width: 250px;
+    width: 20vw;
     padding: 1rem;
     background-color: "#f8f9fa";
     overflowY: auto;
     padding: 0;
+}
+
+#widget-sidebar {
+    overflow-y: auto;
 }
 
 navbar {
@@ -15,9 +19,15 @@ navbar {
 }
 
 #map {
-    margin-left: 260px;
+    margin-left: 20vw;
     margin-top: 56px;
     padding: 0;
+    width: 50vw;
+    height: 100vh;
+}
+
+#widget-panel {
+    overflow: auto;
 }
 
 aside h5, aside p {
@@ -27,6 +37,16 @@ aside h5, aside p {
 .cp {
     color: white;
     padding-bottom: 15px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 5px;
+    transition: 0.2s ease-in-out;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.cp:hover {
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    transform: translateY(-2px);
 }
 
 .cp h3 {
@@ -52,6 +72,7 @@ aside h5, aside p {
 .cp div * {
     width: 100%;
     text-align: right;
+    cursor: pointer;
 }
 
 #control-panel {
@@ -59,11 +80,9 @@ aside h5, aside p {
     top: 56px;
     right: 0;
     bottom: 0;
-    width: 25vw;
-    padding: 1rem;
-    background-color: "#f8f9fa";
+    width: 30vw;
+    padding: 20px 30px;
     overflowY: auto;
-    padding: 0;
 }
 
 table {
@@ -83,4 +102,38 @@ thead, tbody {
 
 td {
     border: 1px solid black;
+}
+
+pre {
+    background-color: #242424;
+    color: white;
+    border-radius: 4px;
+    padding: 10px;
+    overflow-y: auto;
+    overflow-x: auto;
+    height: max-content;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+#general-controls {
+    display: flex;
+}
+
+#general-controls * {
+    width: 50%;
+    border: none;
+    outline: none;
+    font-size: 11pt;
+    color: white;
+    margin-bottom: 20px;
+    padding: 15px 0;
+    font-weight: bold;
+}
+
+#disable-all-button {
+    background-color: #ec273f;
+}
+
+#enable-all-button {
+    background-color: #9de64e;
 }

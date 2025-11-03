@@ -24,7 +24,7 @@ def handle_monitor(connection):
             while True:
                 message = connection.recv(1024)
                 if not message or message == EOT:
-                    print("[ServerSocket] El cliente ha cortado la conexión")
+                    config.log("[ServerSocket] El cliente ha cortado la conexión")
                     return
                 if message[0:1] != STX or ETX not in message:
                     connection.send(NACK)
@@ -42,14 +42,14 @@ def handle_monitor(connection):
                     id = info[1]
                     state = info[2]
                     if not db.exists(id) and msgtype == 'A':
-                        print(f"[ServerSocket] Alta de nuevo Charging Point {id}")
+                        config.log(f"[ServerSocket] Alta de nuevo Charging Point {id}")
                         price = info[3]
                         db.add_cp(id, 0, 0, "Nombre", price, state)
                     if msgtype == 'S':
                         db.set_state(id, state)
 
     except ConnectionError:
-        print("[ServerSocket] El cliente ha cortado la conexión")
+        config.log("[ServerSocket] El cliente ha cortado la conexión")
         connection.close()
 
 
@@ -57,7 +57,7 @@ def run_server_socket() -> None :
     s = socket()
     s.bind(('', config.PORT))
     s.listen(5)
-    print("[ServerSocket] Escuchando en el puerto " + str(config.PORT))
+    config.log("[ServerSocket] Escuchando en el puerto " + str(config.PORT))
     while True:
         connection, addr = s.accept()
         thread = threading.Thread(target=handle_monitor, args=[connection], daemon=True)
