@@ -1,6 +1,6 @@
 from io import TextIOWrapper
 
-PORT = 10001
+PORT = 10003
 BROKER_IP = "127.0.0.1"
 BROKER_PORT = 9092
 

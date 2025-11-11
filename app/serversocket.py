@@ -1,4 +1,4 @@
-from socket import socket
+from socket import socket, SOL_SOCKET, SO_REUSEADDR
 from database import db
 import threading
 import config
@@ -55,6 +55,7 @@ def handle_monitor(connection):
 
 def run_server_socket() -> None :
     s = socket()
+    s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
     s.bind(('', config.PORT))
     s.listen(5)
     config.log("[ServerSocket] Escuchando en el puerto " + str(config.PORT))

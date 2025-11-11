@@ -12,9 +12,9 @@ config.BROKER_PORT = int(argv[3])
 from kafka_consumer import receive_requests, setup_consumer
 from kafka_producer import resolve_requests, setup_producer
 from database import db
-from gui import run
 import threading
 from serversocket import run_server_socket
+from api import run_api
 
 socket_thread = threading.Thread(target=run_server_socket, daemon=True)
 socket_thread.start()
@@ -25,4 +25,4 @@ requests_thread.start()
 orders_thread = threading.Thread(target=resolve_requests, daemon=True)
 orders_thread.start()
 
-run()
+run_api()
